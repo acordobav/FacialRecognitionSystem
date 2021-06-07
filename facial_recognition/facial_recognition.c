@@ -2,43 +2,56 @@
 #include "facial_recognition.h"
 #include "read_image.c"
 
-int main(void)
+gsl_matrix *vectorize_matrix(gsl_matrix *m)
 {
-  /*
-  int i, j;
-  gsl_matrix * m = gsl_matrix_alloc (10, 3);
-  int rows = m->size1;
-  int cols = m->size2;
-  printf("rows: %d - cols: %d\n", rows, cols);
+    // Creation of the result matrix
+    int rows = m->size1 * m->size2;
+    int cols = 1;
+    gsl_matrix *result = gsl_matrix_alloc(rows, cols);
 
-  for (i = 0; i < 10; i++)
-    for (j = 0; j < 3; j++)
-      gsl_matrix_set (m, i, j, 0.23 + 100*i + j);
-
-  
-  int a = gsl_matrix_get(m, 1, 1);
-  printf("%d\n", a);
-  
-  gsl_matrix_free (m);
-  */
-
-  gsl_matrix* m = read_image("test.png");
-  int rows = m->size1;
-  int cols = m->size2;
-  printf("rows: %d - cols: %d\n", rows, cols);
-
-  for (int i = 0; i < m->size1; i++)
-  {
+    // Iterates each column of the original matrix
+    int element, counter = 0;
     for (int j = 0; j < m->size2; j++)
     {
-      int element = gsl_matrix_get(m, i, j);
-      printf("%d ", element);
+        // Get column view of the original matrix
+        gsl_vector_view vec_view = gsl_matrix_column(m, j);
+        gsl_vector *vector = &vec_view.vector;
+
+        // Iterates each element in the column
+        for (int i = 0; i < vector->size; i++)
+        {
+            // Get column element
+            element = gsl_vector_get(vector, i);
+
+            // Stores element in the result matrix
+            gsl_matrix_set(result, counter, 0, element);
+
+            // Increment position counter
+            counter++;
+        }
     }
-    printf("\n");
-  }
-  
+    return result;
+}
 
-  gsl_matrix_free(m);
+int main()
+{
+    gsl_matrix *a = gsl_matrix_alloc(2, 5);
+    FILE *f = fopen("test.dat", "rb");
+    gsl_matrix_fread(f, a);
+    fclose(f);
 
-  return 0;
+    gsl_matrix *r = vectorize_matrix(a);
+    gsl_matrix_free(a);
+
+    for (int i = 0; i < r->size1; i++)
+    {
+        for (int j = 0; j < r->size2; j++)
+        {
+            int element = gsl_matrix_get(r, i, j);
+            printf("%d ", element);
+        }
+        printf("\n");
+    }
+
+    return 0;
 }
