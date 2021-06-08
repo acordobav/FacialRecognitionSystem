@@ -3,18 +3,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
 struct node
 {
-    void* data;
+    void *data;
     struct node *next;
 } typedef node;
 
-
-struct llist {
-    struct node* head;
+struct llist
+{
+    struct node *head;
 } typedef llist;
-
 
 //display the list
 void print_list(llist *list)
@@ -25,7 +23,7 @@ void print_list(llist *list)
     //start from the beginning
     while (ptr != NULL)
     {
-        char* data = ptr->data;
+        char *data = ptr->data;
         printf("%s ", data);
         ptr = ptr->next;
     }
@@ -33,7 +31,8 @@ void print_list(llist *list)
     printf("]\n");
 }
 
-llist* create_list() {
+llist *create_list()
+{
     //create a link
     llist *list = (struct llist *)malloc(sizeof(struct llist));
 
@@ -43,14 +42,14 @@ llist* create_list() {
 }
 
 //insert link at the first location
-void insert_first(llist *list, void* data)
+void insert_first(llist *list, void *data)
 {
     //create a link
     struct node *link = (struct node *)malloc(sizeof(struct node));
 
     link->data = data;
 
-    node* head = list->head;
+    node *head = list->head;
 
     //point it to old first node
     link->next = head;
@@ -62,7 +61,7 @@ void insert_first(llist *list, void* data)
 //delete first item
 struct node *delete_first(llist *list)
 {
-    node* head = list->head;
+    node *head = list->head;
 
     //save reference to first link
     struct node *tempLink = head;
@@ -80,11 +79,11 @@ bool is_empty(llist *list)
     return list->head == NULL;
 }
 
-int length(llist *list)
+int list_length(llist *list)
 {
     int length = 0;
     struct node *current;
-    node* head = list->head;
+    node *head = list->head;
 
     for (current = head; current != NULL; current = current->next)
     {
@@ -95,40 +94,37 @@ int length(llist *list)
 }
 
 //find a link with given data
-node *find(llist *list, void* data)
+void *find(llist *list, int index)
 {
-
+    int i = 0;
     //start from the first link
     struct node *current = list->head;
 
-    //if list is empty
-    if (list->head == NULL)
-    {
-        return NULL;
-    }
-
     //navigate through list
-    while (current->data != data)
+    while (1)
     {
-
         //if it is last node
-        if (current->next == NULL)
+        if (current == NULL)
         {
             return NULL;
         }
         else
         {
+            if (i == index)
+                break;
+
             //go to next link
+            i++;
             current = current->next;
         }
     }
 
     //if data found, return the current Link
-    return current;
+    return current->data;
 }
 
 //delete a link with given data
-node *delete (llist *list, void* data)
+void delete (llist *list, void *data)
 {
 
     //start from the first link
@@ -138,7 +134,7 @@ node *delete (llist *list, void* data)
     //if list is empty
     if (list->head == NULL)
     {
-        return NULL;
+        return;
     }
 
     //navigate through list
@@ -148,7 +144,7 @@ node *delete (llist *list, void* data)
         //if it is last node
         if (current->next == NULL)
         {
-            return NULL;
+            return;
         }
         else
         {
@@ -171,5 +167,28 @@ node *delete (llist *list, void* data)
         previous->next = current->next;
     }
 
-    return current;
+    free(current);
+}
+
+void clean_list(llist *list)
+{
+
+    //start from the first link
+    node *current = list->head;
+    node *previous = list->head;
+    free(list);
+
+    //navigate through list
+    while (1)
+    {
+        //if it is last node
+        if (current == NULL) break;
+        else
+        {
+            previous = current;
+            current = current->next;
+
+            free(previous);
+        }
+    }
 }

@@ -34,10 +34,3 @@ llist *get_directory_content(char *folder_path)
     closedir(dir);
     return list;
 }
-
-int main()
-{
-    llist* files = get_directory_content("./database");
-    print_list(files);
-    return 0;
-}

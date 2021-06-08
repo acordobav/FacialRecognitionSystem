@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include "facial_recognition.h"
 #include "read_image.c"
+#include "directory_content.c"
 
-gsl_matrix *vectorize_matrix(gsl_matrix *m)
+gsl_vector *vectorize_matrix(gsl_matrix *m)
 {
-    // Creation of the result matrix
-    int rows = m->size1 * m->size2;
-    int cols = 1;
-    gsl_matrix *result = gsl_matrix_alloc(rows, cols);
+    // Creation of the result vector
+    gsl_vector *result = gsl_vector_alloc(m->size1 * m->size2);
 
     // Iterates each column of the original matrix
     int element, counter = 0;
@@ -24,7 +23,7 @@ gsl_matrix *vectorize_matrix(gsl_matrix *m)
             element = gsl_vector_get(vector, i);
 
             // Stores element in the result matrix
-            gsl_matrix_set(result, counter, 0, element);
+            gsl_vector_set(result, counter, element);
 
             // Increment position counter
             counter++;
@@ -33,25 +32,62 @@ gsl_matrix *vectorize_matrix(gsl_matrix *m)
     return result;
 }
 
+gsl_matrix *gen_training_set(char *folder_path, int rows, int cols)
+{
+    // Read filenames that are inside the folderpath
+    llist *files = get_directory_content(folder_path);
+    int length = list_length(files);
+
+    gsl_matrix *training_set = gsl_matrix_alloc(rows * cols, length);
+
+    for (int i = 0; i < length; i++)
+    {
+        // Get the filename
+        char *filename = (char *)find(files, i);
+
+        // Builds the filepath
+        char file[100] = "";
+        strcat(file, folder_path);
+        strcat(file, "/");
+        strcat(file, filename);
+
+        // Reads the image and vectorize it
+        gsl_matrix *image = read_image(file);
+        gsl_vector *image_vectorized = vectorize_matrix(image);
+
+        // Copies the vectorized image into a column
+        gsl_matrix_set_col(training_set, i, image_vectorized);
+
+        // Clean memory
+        gsl_matrix_free(image);
+        gsl_vector_free(image_vectorized);
+        free(filename);
+    }
+
+    clean_list(files);
+
+    return training_set;
+}
+
 int main()
 {
-    gsl_matrix *a = gsl_matrix_alloc(2, 5);
+    /*gsl_matrix *a = gsl_matrix_alloc(2, 5);
     FILE *f = fopen("test.dat", "rb");
     gsl_matrix_fread(f, a);
     fclose(f);
 
-    gsl_matrix *r = vectorize_matrix(a);
+    gsl_vector *r = vectorize_matrix(a);
     gsl_matrix_free(a);
 
-    for (int i = 0; i < r->size1; i++)
+    for (int i = 0; i < r->size; i++)
     {
-        for (int j = 0; j < r->size2; j++)
-        {
-            int element = gsl_matrix_get(r, i, j);
-            printf("%d ", element);
-        }
-        printf("\n");
-    }
+        int element = gsl_vector_get(r, i);
+        printf("%d ", element);
+    }*/
+
+    gsl_matrix *training_set = gen_training_set("./database", 112, 92);
+
+    // gsl_vector average_face = get_average_face(training_set);
 
     return 0;
 }
