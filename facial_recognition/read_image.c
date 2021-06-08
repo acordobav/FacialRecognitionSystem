@@ -74,7 +74,8 @@ gsl_matrix *read_image(char *filepath)
         {
             png_byte *pixel = &(row[j * channels]);
             // Lectura del pixel, se guarda en la posicion correspondiente en data
-            gsl_matrix_set(image_matrix, i, j, pixel[0]);
+            double pixel_normalized = pixel[0] / 255.0;
+            gsl_matrix_set(image_matrix, i, j, pixel_normalized);
         }
     }
 

@@ -9,7 +9,7 @@ gsl_vector *vectorize_matrix(gsl_matrix *m)
     gsl_vector *result = gsl_vector_alloc(m->size1 * m->size2);
 
     // Iterates each column of the original matrix
-    int element, counter = 0;
+    double element, counter = 0;
     for (int j = 0; j < m->size2; j++)
     {
         // Get column view of the original matrix
@@ -69,6 +69,33 @@ gsl_matrix *gen_training_set(char *folder_path, int rows, int cols)
     return training_set;
 }
 
+gsl_vector *get_average_face(gsl_matrix *training_set)
+{
+    gsl_vector *average_face = gsl_vector_alloc(training_set->size1);
+    gsl_vector_set_zero(average_face);
+
+    // Sums each column in the trainign set
+    for (int j = 0; j < training_set->size2; j++)
+    {
+        // Get column view of the original matrix
+        gsl_vector_view vec_view = gsl_matrix_column(training_set, j);
+        gsl_vector *vector = &vec_view.vector;
+
+        // Adds the current column to the global counter
+        gsl_vector_add(average_face, vector);
+    }
+
+    // Creates a vector to calculate the average
+    gsl_vector *div_vector = gsl_vector_alloc(training_set->size1);
+    gsl_vector_set_all(div_vector, training_set->size2);
+
+    // Calculates the average
+    gsl_vector_div(average_face, div_vector);
+    gsl_vector_free(div_vector);
+
+    return average_face;
+}
+
 int main()
 {
     /*gsl_matrix *a = gsl_matrix_alloc(2, 5);
@@ -85,9 +112,37 @@ int main()
         printf("%d ", element);
     }*/
 
-    gsl_matrix *training_set = gen_training_set("./database", 112, 92);
+    //gsl_matrix *training_set = gen_training_set("./database", 112, 92);
+    gsl_matrix *training_set = gen_training_set("./test", 2, 5);
+    
+    /*for (int j = 0; j < training_set->size2; j++)
+    {
+        for (int i = 0; i < training_set->size1; i++)
+        {
+            printf("m(%d,%d) = %g\n", i, j,
+                   gsl_matrix_get(training_set, i, j));
+        }
+    }*/
 
-    // gsl_vector average_face = get_average_face(training_set);
+    gsl_vector *average_face = get_average_face(training_set);
+
+    for (int i = 0; i < average_face->size; i++)
+    {
+        double element = gsl_vector_get(average_face, i);
+        printf("%f ", element);
+    }
+    printf("\n");
+
+    /*gsl_matrix* image = read_image("./test/1.png");
+
+    for (int j = 0; j < image->size2; j++)
+    {
+        for (int i = 0; i < image->size1; i++)
+        {
+            printf("m(%d,%d) = %g\n", i, j,
+                   gsl_matrix_get(image, i, j));
+        }
+    }*/
 
     return 0;
 }

@@ -27,4 +27,9 @@ gsl_vector *vectorize_matrix(gsl_matrix *m);
 **/
 gsl_vector *get_average_face(gsl_matrix* training_set);
 
+/**
+ * Reads images stored in folder_path and generates a training set
+ * folder_path: folder path with the images to use
+ * return: gsl_matrix with the training set
+**/
 gsl_matrix *gen_training_set(char* folder_path, int rows, int cols);
