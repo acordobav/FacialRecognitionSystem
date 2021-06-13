@@ -161,8 +161,8 @@ gsl_vector *mul_matrix_vector(gsl_matrix *matrix, gsl_vector *vector)
 
 gsl_matrix *get_coordinate_matrix(gsl_matrix *U_t, gsl_matrix *A)
 {
-    gsl_matrix* coordinate_matrix = gsl_matrix_alloc(U_t->size1, U_t->size1);
-    
+    gsl_matrix *coordinate_matrix = gsl_matrix_alloc(U_t->size1, U_t->size1);
+
     for (int j = 0; j < A->size2; j++)
     {
         // Get column view of the matrix
@@ -181,15 +181,21 @@ gsl_matrix *get_coordinate_matrix(gsl_matrix *U_t, gsl_matrix *A)
     return coordinate_matrix;
 }
 
-int main()
+void write_matrix(gsl_matrix *matrix, char *filename)
 {
-    // gsl_matrix *training_set = gen_training_set("./database", 112, 92);
-    gsl_matrix *training_set = gen_training_set("./test", 2, 5);
+    FILE *f = fopen(filename, "wb");
+    gsl_matrix_fwrite(f, matrix);
+    fclose(f);
+}
+
+void analyze_database(char* folderpath, int rows, int cols)
+{
+    gsl_matrix *training_set = gen_training_set(folderpath, rows, cols);
     int images = training_set->size2;
 
     gsl_vector *average_face = get_average_face(training_set);
     gsl_matrix *A = sub_average_face(training_set, average_face);
-    
+
     gsl_matrix *U = gsl_matrix_alloc(A->size1, A->size2);
     gsl_matrix_memcpy(U, A);
 
@@ -199,43 +205,31 @@ int main()
 
     gsl_linalg_SV_decomp(U, V, S, work);
 
-    gsl_vector *x = gsl_vector_alloc(images);
     gsl_matrix *U_t = transpose(U);
 
-    gsl_matrix * coordinate_matrix = get_coordinate_matrix(U_t, A);
+    gsl_matrix *coordinate_matrix = get_coordinate_matrix(U_t, A);
 
-    for (int i = 0; i < coordinate_matrix->size1; i++)
-    {
-        for (int j = 0; j < coordinate_matrix->size2; j++)
-        {
-            printf("%f ", gsl_matrix_get(coordinate_matrix, i, j));
-        }
-        printf("\n");
-    }
+    write_matrix(coordinate_matrix, "coordinates_face_subspace.dat");
 
-    /*for (int i = 0; i < average_face->size; i++)
-    {
-        double element = gsl_vector_get(average_face, i);
-        printf("%f ", element);
-    }
-    printf("\n");*/
-
-    /*
-    for (int j = 0; j < image->size2; j++)
-    {
-        for (int i = 0; i < image->size1; i++)
-        {
-            printf("m(%d,%d) = %g\n", i, j,
-                   gsl_matrix_get(image, i, j));
-        }
-    }*/
-
-
-    gsl_vector_free(x);
     gsl_vector_free(work);
     gsl_vector_free(S);
     gsl_matrix_free(V);
     gsl_matrix_free(U);
+    gsl_matrix_free(U_t);
     gsl_vector_free(average_face);
+    gsl_matrix_free(coordinate_matrix);
+}
+
+int main() {
+    /*char* folderpath = "./test";
+    int rows = 2;
+    int cols = 5;*/
+
+    char* folderpath = "./database";
+    int rows = 112;
+    int cols = 92;
+
+    analyze_database(folderpath, rows, cols);
+
     return 0;
 }

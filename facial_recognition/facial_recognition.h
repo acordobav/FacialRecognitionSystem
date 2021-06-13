@@ -55,4 +55,13 @@ gsl_matrix* transpose(gsl_matrix* matrix);
 gsl_vector* mul_matrix_vector(gsl_matrix* matrix, gsl_vector* vector);
 
 
+/**
+ * Generates the coordinates of each face in the face subspace
+**/
 gsl_matrix* get_coordinate_matrix(gsl_matrix* U_t, gsl_matrix* A);
+
+
+void write_matrix(gsl_matrix *matrix, char* filename);
+
+
+void analyze_database(char* folderpath, int rows, int cols);
