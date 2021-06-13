@@ -80,3 +80,6 @@ void analyze_database(char* folderpath, int rows, int cols);
 
 
 int compare();
+
+
+void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols);

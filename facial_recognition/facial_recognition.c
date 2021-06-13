@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "facial_recognition.h"
-#include "read_image.c"
+#include "handle_image.c"
 #include "directory_content.c"
 
 gsl_vector *vectorize_matrix(gsl_matrix *m)
@@ -228,6 +228,8 @@ int read_int(char *filename)
 void analyze_database(char *folderpath, int rows, int cols)
 {
     gsl_matrix *training_set = gen_training_set(folderpath, rows, cols);
+    write_matrix(training_set, "training_set.dat");
+
     int images = training_set->size2;
     write_int(images, "total_images.dat");
 
@@ -265,6 +267,10 @@ int compare(char *filepath, int rows, int cols, int el)
 {
     // Load total images number
     int images = read_int("total_images.dat");
+
+    // Load the training set
+    gsl_matrix *training_set = gsl_matrix_alloc(rows * cols, images);
+    read_matrix(training_set, "training_set.dat");
 
     // Read the image
     gsl_matrix *image = read_image(filepath);
@@ -323,16 +329,18 @@ int compare(char *filepath, int rows, int cols, int el)
         // Stores the result
         gsl_vector_set(comparisons, j, norm);
     }
-    
+
     // Gets the comparison with the minimum value
     int index = gsl_vector_min_index(comparisons);
-    
+
+    rebuild_coincidence(training_set, index, rows, cols);
 
     gsl_vector_free(e_i);
     gsl_matrix_free(U_t);
     gsl_matrix_free(U);
     gsl_matrix_free(image);
     gsl_matrix_free(coordinates_fs);
+    gsl_matrix_free(training_set);
     gsl_vector_free(coordinate);
     gsl_vector_free(distance);
     gsl_vector_free(projection);
@@ -352,6 +360,29 @@ int compare(char *filepath, int rows, int cols, int el)
     }
 
     */
+}
+
+void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols)
+{
+    // Get original vectorized image
+    gsl_vector_view vec_image_view = gsl_matrix_column(training_set, index);
+    gsl_vector *vec_image = &vec_image_view.vector;
+
+    gsl_matrix *image = gsl_matrix_alloc(rows, cols);
+
+    int counter = 0;
+    for (int j = 0; j < cols; j++)
+    {
+        for (int i = 0; i < rows; i++)
+        {
+            double pixel = gsl_vector_get(vec_image, counter) * 255;
+            gsl_matrix_set(image, i, j, pixel);
+            counter++;
+        }
+    }
+
+    write_image("coincidence.png", image);
+    gsl_matrix_free(image);
 }
 
 int main()
