@@ -61,7 +61,22 @@ gsl_vector* mul_matrix_vector(gsl_matrix* matrix, gsl_vector* vector);
 gsl_matrix* get_coordinate_matrix(gsl_matrix* U_t, gsl_matrix* A);
 
 
+void write_int(int i, char* filename);
+
+
 void write_matrix(gsl_matrix *matrix, char* filename);
 
 
+void write_vector(gsl_vector *vector, char* filename);
+
+
+void read_matrix(gsl_matrix *matrix, char *filename);
+
+
+void read_vector(gsl_vector *vector, char *filename);
+
+
 void analyze_database(char* folderpath, int rows, int cols);
+
+
+int compare();

@@ -188,12 +188,52 @@ void write_matrix(gsl_matrix *matrix, char *filename)
     fclose(f);
 }
 
-void analyze_database(char* folderpath, int rows, int cols)
+void read_matrix(gsl_matrix *matrix, char *filename)
+{
+    FILE *f = fopen(filename, "rb");
+    gsl_matrix_fread(f, matrix);
+    fclose(f);
+}
+
+void write_vector(gsl_vector *vector, char *filename)
+{
+    FILE *f = fopen(filename, "wb");
+    gsl_vector_fwrite(f, vector);
+    fclose(f);
+}
+
+void read_vector(gsl_vector *vector, char *filename)
+{
+    FILE *f = fopen(filename, "rb");
+    gsl_vector_fread(f, vector);
+    fclose(f);
+}
+
+void write_int(int i, char *filename)
+{
+    FILE *f = fopen(filename, "wb");
+    fwrite(&i, sizeof(int), 1, f);
+    fclose(f);
+}
+
+int read_int(char *filename)
+{
+    int i = 0;
+    FILE *f = fopen(filename, "rb");
+    fread(&i, sizeof(int), 1, f);
+    fclose(f);
+    return i;
+}
+
+void analyze_database(char *folderpath, int rows, int cols)
 {
     gsl_matrix *training_set = gen_training_set(folderpath, rows, cols);
     int images = training_set->size2;
+    write_int(images, "total_images.dat");
 
     gsl_vector *average_face = get_average_face(training_set);
+    write_vector(average_face, "average_face.dat");
+
     gsl_matrix *A = sub_average_face(training_set, average_face);
 
     gsl_matrix *U = gsl_matrix_alloc(A->size1, A->size2);
@@ -206,6 +246,7 @@ void analyze_database(char* folderpath, int rows, int cols)
     gsl_linalg_SV_decomp(U, V, S, work);
 
     gsl_matrix *U_t = transpose(U);
+    write_matrix(U_t, "U_transpose.dat");
 
     gsl_matrix *coordinate_matrix = get_coordinate_matrix(U_t, A);
 
@@ -220,16 +261,114 @@ void analyze_database(char* folderpath, int rows, int cols)
     gsl_matrix_free(coordinate_matrix);
 }
 
-int main() {
-    /*char* folderpath = "./test";
-    int rows = 2;
-    int cols = 5;*/
+int compare(char *filepath, int rows, int cols, int el)
+{
+    // Load total images number
+    int images = read_int("total_images.dat");
 
-    char* folderpath = "./database";
+    // Read the image
+    gsl_matrix *image = read_image(filepath);
+
+    // Vectorize the image
+    gsl_vector *vectorized_image = vectorize_matrix(image);
+
+    // Load average face
+    gsl_vector *average_face = gsl_vector_alloc(rows * cols);
+    read_vector(average_face, "average_face.dat");
+
+    // Load U tranpose
+    gsl_matrix *U_t = gsl_matrix_alloc(images, rows * cols);
+    read_matrix(U_t, "U_transpose.dat");
+
+    // Load coordinates_face_subspace
+    gsl_matrix *coordinates_fs = gsl_matrix_alloc(images, images);
+    read_matrix(coordinates_fs, "coordinates_face_subspace.dat");
+
+    // Calculate U
+    gsl_matrix *U = transpose(U_t);
+
+    // Calculate coordinate vector
+    gsl_vector *distance = gsl_vector_alloc(vectorized_image->size);
+    gsl_vector_memcpy(distance, vectorized_image);
+    gsl_vector_sub(distance, average_face);
+
+    gsl_vector *coordinate = mul_matrix_vector(U_t, distance);
+
+    // Calculate projection vector
+    gsl_vector *projection = mul_matrix_vector(U, coordinate);
+
+    // Calculate distance to face space
+    gsl_vector_sub(distance, projection);
+    double ef = gsl_blas_dnrm2(distance);
+
+    if (ef > el)
+        return -1; // Image is not a face
+
+    // Compares the input image against the training set
+    gsl_vector *comparisons = gsl_vector_alloc(images);
+    gsl_vector *e_i = gsl_vector_alloc(coordinate->size);
+    for (int j = 0; j < images; j++)
+    {
+        // Get column view of the coordinates face space
+        gsl_vector_view col_view = gsl_matrix_column(coordinates_fs, j);
+        gsl_vector *column = &col_view.vector;
+
+        // Copy image coordinate vector
+        gsl_vector_memcpy(e_i, coordinate);
+
+        // Compares the image agains the face space
+        gsl_vector_sub(e_i, column);
+        double norm = gsl_blas_dnrm2(e_i);
+
+        // Stores the result
+        gsl_vector_set(comparisons, j, norm);
+    }
+    
+    // Gets the comparison with the minimum value
+    int index = gsl_vector_min_index(comparisons);
+    
+
+    gsl_vector_free(e_i);
+    gsl_matrix_free(U_t);
+    gsl_matrix_free(U);
+    gsl_matrix_free(image);
+    gsl_matrix_free(coordinates_fs);
+    gsl_vector_free(coordinate);
+    gsl_vector_free(distance);
+    gsl_vector_free(projection);
+    gsl_vector_free(average_face);
+    gsl_vector_free(vectorized_image);
+    gsl_vector_free(comparisons);
+
+    /*
+
+    for (int i = 0; i < U->size1; i++)
+    {
+        for (int j = 0; j < U->size2; j++)
+        {
+            printf("%f ", gsl_matrix_get(U, i, j));
+        }
+        printf("\n");
+    }
+
+    */
+}
+
+int main()
+{
+    int el = 19;
+    //char *folderpath = "./test";
+    //int rows = 2;
+    //int cols = 5;
+
+    char *folderpath = "./database";
     int rows = 112;
     int cols = 92;
 
     analyze_database(folderpath, rows, cols);
+
+    //compare("./test/1.png", 2, 5);
+    compare("./test.png", rows, cols, el);
 
     return 0;
 }
