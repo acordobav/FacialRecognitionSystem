@@ -263,7 +263,7 @@ void analyze_database(char *folderpath, int rows, int cols)
     gsl_matrix_free(coordinate_matrix);
 }
 
-int compare(char *filepath, int rows, int cols, int el)
+int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch)
 {
     // Load total images number
     int images = read_int("total_images.dat");
@@ -307,8 +307,10 @@ int compare(char *filepath, int rows, int cols, int el)
     gsl_vector_sub(distance, projection);
     double ef = gsl_blas_dnrm2(distance);
 
-    if (ef > el)
+    if (ef > e1) {
+        printf("Image is not a face! | ef = %f\n", ef);
         return -1; // Image is not a face
+    }
 
     // Compares the input image against the training set
     gsl_vector *comparisons = gsl_vector_alloc(images);
@@ -330,10 +332,28 @@ int compare(char *filepath, int rows, int cols, int el)
         gsl_vector_set(comparisons, j, norm);
     }
 
+
+    // Checks if it is a known face
+    int known_face = 0;
+    for (int i = 0; i < comparisons->size; i++)
+    {
+        double e_i = gsl_vector_get(comparisons, i);
+
+        if(e_i > e0) known_face++;
+        // printf("%f ", e_i);
+    }
+    // printf("\n%d\n", known_face);
+
     // Gets the comparison with the minimum value
     int index = gsl_vector_min_index(comparisons);
-
     rebuild_coincidence(training_set, index, rows, cols);
+
+    if (known_face > max_mismatch) {
+        printf("Input image is an unknown face!\n");
+        return -2; // Face is unknown
+    }
+    
+
 
     gsl_vector_free(e_i);
     gsl_matrix_free(U_t);
@@ -348,18 +368,9 @@ int compare(char *filepath, int rows, int cols, int el)
     gsl_vector_free(vectorized_image);
     gsl_vector_free(comparisons);
 
-    /*
+    printf("Known face!\n");
+    return 0;
 
-    for (int i = 0; i < U->size1; i++)
-    {
-        for (int j = 0; j < U->size2; j++)
-        {
-            printf("%f ", gsl_matrix_get(U, i, j));
-        }
-        printf("\n");
-    }
-
-    */
 }
 
 void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols)
@@ -387,7 +398,9 @@ void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols
 
 int main()
 {
-    int el = 19;
+    int e1 = 21;
+    int e0 = 20;
+    int max_mismatch = 5;
     //char *folderpath = "./test";
     //int rows = 2;
     //int cols = 5;
@@ -399,7 +412,8 @@ int main()
     analyze_database(folderpath, rows, cols);
 
     //compare("./test/1.png", 2, 5);
-    compare("./test.png", rows, cols, el);
+    //compare("./person1.png", rows, cols, e1, e0, max_mismatch);
+    compare("./test.png", rows, cols, e1, e0, max_mismatch);
 
     return 0;
 }
