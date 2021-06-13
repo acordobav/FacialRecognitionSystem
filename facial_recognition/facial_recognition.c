@@ -138,7 +138,7 @@ gsl_vector *mul_matrix_vector(gsl_matrix *matrix, gsl_vector *vector)
     {
         gsl_vector_view row_view = gsl_matrix_row(matrix, i);
         gsl_vector *row = &row_view.vector;
-        
+
         // Copy the elements of row into vec_aux
         gsl_vector_memcpy(vec_aux, row);
 
@@ -159,6 +159,28 @@ gsl_vector *mul_matrix_vector(gsl_matrix *matrix, gsl_vector *vector)
     return result;
 }
 
+gsl_matrix *get_coordinate_matrix(gsl_matrix *U_t, gsl_matrix *A)
+{
+    gsl_matrix* coordinate_matrix = gsl_matrix_alloc(U_t->size1, U_t->size1);
+    
+    for (int j = 0; j < A->size2; j++)
+    {
+        // Get column view of the matrix
+        gsl_vector_view col_view = gsl_matrix_column(A, j);
+        gsl_vector *column = &col_view.vector;
+
+        // Multiply vector and column
+        gsl_vector *x_i = mul_matrix_vector(U_t, column);
+
+        // Copy result
+        gsl_matrix_set_col(coordinate_matrix, j, x_i);
+
+        gsl_vector_free(x_i);
+    }
+
+    return coordinate_matrix;
+}
+
 int main()
 {
     // gsl_matrix *training_set = gen_training_set("./database", 112, 92);
@@ -167,47 +189,29 @@ int main()
 
     gsl_vector *average_face = get_average_face(training_set);
     gsl_matrix *A = sub_average_face(training_set, average_face);
+    
+    gsl_matrix *U = gsl_matrix_alloc(A->size1, A->size2);
+    gsl_matrix_memcpy(U, A);
 
     gsl_vector *work = gsl_vector_alloc(A->size2);
     gsl_vector *S = gsl_vector_alloc(A->size2);
     gsl_matrix *V = gsl_matrix_alloc(A->size2, A->size2);
 
-    gsl_linalg_SV_decomp(A, V, S, work);
-    gsl_matrix *U = A;
+    gsl_linalg_SV_decomp(U, V, S, work);
 
     gsl_vector *x = gsl_vector_alloc(images);
     gsl_matrix *U_t = transpose(U);
 
-    /*
-    gsl_vector *x_i = gsl_vector_alloc(images);
-    for (int i = 0; i < U->size2; i++)
-    {
-    }
-    gsl_vector_free(x_i);
-    */
+    gsl_matrix * coordinate_matrix = get_coordinate_matrix(U_t, A);
 
-    gsl_vector *test = gsl_vector_alloc(3);
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < coordinate_matrix->size1; i++)
     {
-        gsl_vector_set(test, i, i);
-    }
-
-    gsl_vector* r = mul_matrix_vector(U, test);
-
-    for (int i = 0; i < r->size; i++)
-    {
-        printf("%f ", gsl_vector_get(r, i));
-    }
-    
-
-    /*for (int i = 0; i < U->size1; i++)
-    {
-        for (int j = 0; j < U->size2; j++)
+        for (int j = 0; j < coordinate_matrix->size2; j++)
         {
-            printf("%f ", gsl_matrix_get(U, i, j));
+            printf("%f ", gsl_matrix_get(coordinate_matrix, i, j));
         }
         printf("\n");
-    }*/
+    }
 
     /*for (int i = 0; i < average_face->size; i++)
     {
@@ -226,12 +230,12 @@ int main()
         }
     }*/
 
+
     gsl_vector_free(x);
     gsl_vector_free(work);
     gsl_vector_free(S);
     gsl_matrix_free(V);
     gsl_matrix_free(U);
     gsl_vector_free(average_face);
-
     return 0;
 }

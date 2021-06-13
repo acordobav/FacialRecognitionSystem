@@ -49,4 +49,10 @@ gsl_matrix* sub_average_face(gsl_matrix* training_set, gsl_vector* average_face)
 gsl_matrix* transpose(gsl_matrix* matrix);
 
 
+/**
+ * Multiply matrix and vector
+**/
 gsl_vector* mul_matrix_vector(gsl_matrix* matrix, gsl_vector* vector);
+
+
+gsl_matrix* get_coordinate_matrix(gsl_matrix* U_t, gsl_matrix* A);
