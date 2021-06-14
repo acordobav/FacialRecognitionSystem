@@ -1,4 +1,4 @@
-libs = -lpng -lgsl
+libs = -lpng -lgsl -lgslcblas
 all: facial_recognition
 .PHONY: all
 

@@ -395,24 +395,44 @@ void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols
     gsl_matrix_free(image);
 }
 
-int main()
+int main( int argc, char  *argv [ ] )
 {
     int e1 = 21;
     int e0 = 20;
-    int max_mismatch = 5;
+    int max_mismatch = 1000;
     //char *folderpath = "./test";
     //int rows = 2;
     //int cols = 5;
 
-    char *folderpath = "./database";
+    char *folderpath = "../../Database";
     int rows = 112;
     int cols = 92;
 
-    analyze_database(folderpath, rows, cols);
+    // analyze_database(folderpath, rows, cols);
 
     //compare("./test/1.png", 2, 5);
     //compare("./person1.png", rows, cols, e1, e0, max_mismatch);
-    compare("./test.png", rows, cols, e1, e0, max_mismatch);
+    //compare("../../Comparar/40_10.png", rows, cols, e1, e0, max_mismatch);
+
+    if( argc == 3 )
+    {
+        if (argv[1][1]==0x63) /*comparar con "c"*/
+        {
+            printf("file to compare: %s \n", argv[2]);
+            compare(argv[2], rows, cols, e1, e0, max_mismatch);
+        }
+        else if (argv[1][1]==0x61) /*comparar con "a"*/
+        {
+            printf("database filepath: %s \n", argv[2]);
+            analyze_database(argv[2], rows, cols);
+        }
+        
+        
+    }
+    else{
+        printf("argument error\n");
+    }
+    
 
     return 0;
 }
