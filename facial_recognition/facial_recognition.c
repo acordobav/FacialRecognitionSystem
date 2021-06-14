@@ -334,14 +334,14 @@ int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch
     }
 
     // Checks if it is a known face
-    int known_face = 0;
+    int unknown_face = 0;
     for (int i = 0; i < comparisons->size; i++)
     {
         double e_i = gsl_vector_get(comparisons, i);
 
         if (e_i > e0)
-            known_face++;
-        // printf("%f ", e_i);
+            unknown_face++;
+        printf("E_i %f \n", e_i);
     }
     // printf("\n%d\n", known_face);
 
@@ -349,7 +349,7 @@ int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch
     int index = gsl_vector_min_index(comparisons);
     rebuild_coincidence(training_set, index, rows, cols);
 
-    if (known_face > max_mismatch)
+    if (unknown_face > max_mismatch)
     {
         printf("Input image is an unknown face!\n");
         return -2; // Face is unknown
@@ -397,9 +397,9 @@ void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols
 
 int main( int argc, char  *argv [ ] )
 {
-    int e1 = 21;
-    int e0 = 20;
-    int max_mismatch = 1000;
+    int e1 = 20; //cara
+    int e0 = 10; //conocido
+    int max_mismatch = 60;
     //char *folderpath = "./test";
     //int rows = 2;
     //int cols = 5;
