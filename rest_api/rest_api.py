@@ -1,23 +1,31 @@
-import json, base64
+import json, base64, os
 from functools import wraps
-from flask import Flask, request, jsonify, Response
-#from flask_cors import CORS, cross_origin
+from flask import Flask, config, request, jsonify
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
-#CORS(app)
+CORS(app)
 
 photos = []
 
 def config_response(response):
 
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'application/json, text/plain, */*')
-    response.headers.add('Access-Control-Allow-Methods', "GET, PUT, POST, DELETE, OPTIONS")
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response.headers.add("Access-Control-Allow-Headers", "*")
+    response.headers.add("Access-Control-Allow-Methods", "*")
     return response
 
+# Metodo de options
+@app.route('/user', methods=['OPTIONS'])
+@cross_origin()
+def options():
+    
+    response = config_response('')
+    return response
+
+# Metodo para registrar un usuario
 @app.route('/user', methods=['PUT'])
+@cross_origin()
 def put_user():
 
     user_metadata = request.get_json()
@@ -27,13 +35,10 @@ def put_user():
     file.close()
 
     response = jsonify(message="Usuario registrado")
-    #response = config_response(response)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Content-Type', 'application/json, text/plain, */*')
-    response.headers.add('Access-Control-Allow-Methods', "GET, PUT, POST, DELETE, OPTIONS")
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    response = config_response(response)
     return response
 
+# Metodo para iniciar sesion de un usuario
 @app.route('/user', methods=['POST'])
 def post_user():
 
@@ -55,36 +60,87 @@ def post_user():
         token_base64 = token_base64_bytes.decode('ascii')
         response = {"name": file_name, "email": request_email, "password": request_password, "token": token_base64}
 
-    return jsonify(response)
+        response = jsonify(response)
+        response = config_response(response)
+        return response
+    else:
+        return '', 401
 
+# Metodo para agregar una foto
 @app.route('/photo', methods=['POST'])
 def post_photo():
 
     photo_metadata = request.get_json()
+    dir_name = "Database"
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+        print("Directory created")
+    else:
+        print("Directory already exists")
+
+    image_string = photo_metadata['data']
+    image_base64 = image_string.split(",")[1]
+    #print(image_base64)
+    image_data = base64.b64decode(image_base64)
+    filename = dir_name + "/" + photo_metadata['name']
+    print(filename)
+    with open(filename, 'wb') as file:
+        file.write(image_data)
+
+
     photos.append(photo_metadata)
     response = jsonify(message="Foto enviada")
     response = config_response(response)
     return response
 
+# Metodo para obtener las fotos
 @app.route('/photo', methods=['GET'])
 def get_photos():
 
-    return jsonify(photos)
+    response = jsonify(photos)
+    response = config_response(response)
+    return response
 
+# Metodo para eliminar una foto
 @app.route('/photo/<string:name>', methods=['DELETE'])
 def delete_photo(name):
+
     for photo in photos:
         if photo['name'] == name:
             photos.remove(photo)
-    return '', 204
 
+    filename = "Database" + "/" + name
+    if os.path.exists(filename):
+        os.remove(filename)
+    else:
+        print("File does not exist")
+
+    response = jsonify(message="Foto eliminada")
+    response = config_response(response)
+    return response
+
+# Metodo para asignar variables de configuracion
 @app.route('/settings', methods=['POST'])
 def post_settings():
 
     settings = request.get_json()
-    print(settings['maxFaceDist'])
-    print(settings['knownMaxFace'])
-    return '', 204
+    if not os.path.exists("e0.dat"):
+        os.mknod("e0.dat")
+
+    e0 = str(settings['knownMaxFace']).encode('ascii')
+    with open("e0.dat", 'wb') as file:
+        file.write(e0)
+
+    if not os.path.exists("e1.dat"):
+        os.mknod("e1.dat")
+
+    e1 = str(settings['maxFaceDist']).encode('ascii')
+    with open("e1.dat", 'wb') as file:
+        file.write(e1)
+
+    response = jsonify(message="Variables registradas")
+    response = config_response(response)
+    return response
 
 if __name__ == "__main__":
     app.run()
