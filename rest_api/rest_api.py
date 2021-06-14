@@ -1,18 +1,23 @@
 import json, base64
-from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+from functools import wraps
+from flask import Flask, request, jsonify, Response
+#from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
-app.config['CORS_HEADERS'] = 'Content-Type'
-
-cors = CORS(app, resources={r"/user": {"origins": "http://localhost:8100"}})
-cors = CORS(app, resources={r"/photo": {"origins": "http://localhost:8100"}})
-cors = CORS(app, resources={r"/settings": {"origins": "http://localhost:8100"}})
+app.config["DEBUG"] = True
+#CORS(app)
 
 photos = []
 
+def config_response(response):
+
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Content-Type', 'application/json, text/plain, */*')
+    response.headers.add('Access-Control-Allow-Methods', "GET, PUT, POST, DELETE, OPTIONS")
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    return response
+
 @app.route('/user', methods=['PUT'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def put_user():
 
     user_metadata = request.get_json()
@@ -21,12 +26,15 @@ def put_user():
     file.write(json.dumps(user_metadata))
     file.close()
 
-    response = ''
+    response = jsonify(message="Usuario registrado")
+    #response = config_response(response)
     response.headers.add('Access-Control-Allow-Origin', '*')
-    return response, 204
+    response.headers.add('Content-Type', 'application/json, text/plain, */*')
+    response.headers.add('Access-Control-Allow-Methods', "GET, PUT, POST, DELETE, OPTIONS")
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    return response
 
 @app.route('/user', methods=['POST'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def post_user():
 
     user_metadata = request.get_json()
@@ -46,28 +54,24 @@ def post_user():
         token_base64_bytes = base64.b64encode(token_bytes)
         token_base64 = token_base64_bytes.decode('ascii')
         response = {"name": file_name, "email": request_email, "password": request_password, "token": token_base64}
-        response = json.dumps(response)
-        print(response)
-        #response = json.loads(response)
 
-    return response, 204
+    return jsonify(response)
 
 @app.route('/photo', methods=['POST'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def post_photo():
 
     photo_metadata = request.get_json()
     photos.append(photo_metadata)
-    return '', 204
+    response = jsonify(message="Foto enviada")
+    response = config_response(response)
+    return response
 
 @app.route('/photo', methods=['GET'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def get_photos():
 
     return jsonify(photos)
 
 @app.route('/photo/<string:name>', methods=['DELETE'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def delete_photo(name):
     for photo in photos:
         if photo['name'] == name:
@@ -75,7 +79,6 @@ def delete_photo(name):
     return '', 204
 
 @app.route('/settings', methods=['POST'])
-@cross_origin(origin='localhost',headers=['Content- Type','Authorization'])
 def post_settings():
 
     settings = request.get_json()
