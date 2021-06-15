@@ -7,7 +7,6 @@ app = Flask(__name__)
 app.config["DEBUG"] = True
 CORS(app)
 
-photos = []
 
 def config_response(response):
 
@@ -16,7 +15,7 @@ def config_response(response):
     return response
 
 # Metodo de options
-@app.route('/user', methods=['OPTIONS'])
+@app.route('/', methods=['OPTIONS'])
 @cross_origin()
 def options():
     
@@ -78,17 +77,17 @@ def post_photo():
     else:
         print("Directory already exists")
 
-    image_string = photo_metadata['data']
+    image_string = photo_metadata['webviewPath']
     image_base64 = image_string.split(",")[1]
-    #print(image_base64)
     image_data = base64.b64decode(image_base64)
-    filename = dir_name + "/" + photo_metadata['name']
+    #image_data = base64.b64decode(image_string)
+    filename = dir_name + "/" + photo_metadata['filepath']
     print(filename)
     with open(filename, 'wb') as file:
         file.write(image_data)
 
 
-    photos.append(photo_metadata)
+    #photos.append(photo_metadata)
     response = jsonify(message="Foto enviada")
     response = config_response(response)
     return response
@@ -96,6 +95,19 @@ def post_photo():
 # Metodo para obtener las fotos
 @app.route('/photo', methods=['GET'])
 def get_photos():
+
+    photos = []
+    dir_list = os.listdir("Database")
+    print(dir_list)
+    for photo in dir_list:
+        with open("Database/" + photo, 'rb') as file:
+            photo_bytes = file.read()
+            photo_base64 = base64.b64encode(photo_bytes)
+            #photo_base64 = "data:image/png;base64," + str(photo_base64)[2:]
+            photo_base64 = str(photo_base64)[2:]
+            #print(photo_base64)
+            photo_metadata = {"filepath": photo, "webviewPath": photo_base64}
+            photos.append(photo_metadata)
 
     response = jsonify(photos)
     response = config_response(response)
@@ -105,9 +117,10 @@ def get_photos():
 @app.route('/photo/<string:name>', methods=['DELETE'])
 def delete_photo(name):
 
-    for photo in photos:
-        if photo['name'] == name:
-            photos.remove(photo)
+
+    #for photo in photos:
+    #    if photo['name'] == name:
+    #        photos.remove(photo)
 
     filename = "Database" + "/" + name
     if os.path.exists(filename):
