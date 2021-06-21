@@ -23,7 +23,7 @@ gsl_matrix *read_image(char *filepath)
     {
         printf("Archivo %s no es una imagen en formato png\n", filepath);
         fclose(pFile);
-        remove(filepath); // Se elimina el archivo de la carpeta de procesamineto
+        // remove(filepath); // Se elimina el archivo de la carpeta de procesamineto
         exit(1);
     }
 

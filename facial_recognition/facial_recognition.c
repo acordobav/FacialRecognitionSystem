@@ -3,6 +3,14 @@
 #include "handle_image.c"
 #include "directory_content.c"
 
+#define filepath_training_set "/home/root/lock_server/training_set.dat"
+#define filepath_U_t "/home/root/lock_server/U_transpose.dat"
+#define filepath_coordinate_matrix "/home/root/lock_server/coordinates_face_subspace.dat"
+
+// #define filepath_training_set "training_set.dat"
+// #define filepath_U_t "U_transpose.dat"
+// #define filepath_coordinate_matrix "coordinates_face_subspace.dat"
+
 gsl_vector *vectorize_matrix(gsl_matrix *m)
 {
     // Creation of the result vector
@@ -228,7 +236,8 @@ int read_int(char *filename)
 void analyze_database(char *folderpath, int rows, int cols)
 {
     gsl_matrix *training_set = gen_training_set(folderpath, rows, cols);
-    write_matrix(training_set, "training_set.dat");
+    // write_matrix(training_set, "training_set.dat");
+    write_matrix(training_set, filepath_training_set);
 
     int images = training_set->size2;
     write_int(images, "total_images.dat");
@@ -248,11 +257,13 @@ void analyze_database(char *folderpath, int rows, int cols)
     gsl_linalg_SV_decomp(U, V, S, work);
 
     gsl_matrix *U_t = transpose(U);
-    write_matrix(U_t, "U_transpose.dat");
+    // write_matrix(U_t, "U_transpose.dat");
+    write_matrix(U_t, filepath_U_t);
 
     gsl_matrix *coordinate_matrix = get_coordinate_matrix(U_t, A);
 
-    write_matrix(coordinate_matrix, "coordinates_face_subspace.dat");
+    // write_matrix(coordinate_matrix, "coordinates_face_subspace.dat");
+    write_matrix(coordinate_matrix, filepath_coordinate_matrix);
 
     gsl_vector_free(work);
     gsl_vector_free(S);
@@ -270,7 +281,8 @@ int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch
 
     // Load the training set
     gsl_matrix *training_set = gsl_matrix_alloc(rows * cols, images);
-    read_matrix(training_set, "training_set.dat");
+    // read_matrix(training_set, "training_set.dat");
+    read_matrix(training_set, filepath_training_set);
 
     // Read the image
     gsl_matrix *image = read_image(filepath);
@@ -284,11 +296,13 @@ int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch
 
     // Load U tranpose
     gsl_matrix *U_t = gsl_matrix_alloc(images, rows * cols);
-    read_matrix(U_t, "U_transpose.dat");
+    // read_matrix(U_t, "U_transpose.dat");
+    read_matrix(U_t, filepath_U_t);
 
     // Load coordinates_face_subspace
     gsl_matrix *coordinates_fs = gsl_matrix_alloc(images, images);
-    read_matrix(coordinates_fs, "coordinates_face_subspace.dat");
+    // read_matrix(coordinates_fs, "coordinates_face_subspace.dat");
+    read_matrix(coordinates_fs, filepath_coordinate_matrix);
 
     // Calculate U
     gsl_matrix *U = transpose(U_t);
@@ -306,7 +320,7 @@ int compare(char *filepath, int rows, int cols, int e1, int e0, int max_mismatch
     // Calculate distance to face space
     gsl_vector_sub(distance, projection);
     double ef = gsl_blas_dnrm2(distance);
-
+    printf("ef: %f\n",ef);
     if (ef > e1)
     {
         printf("Image is not a face! | ef = %f\n", ef);
@@ -395,44 +409,44 @@ void rebuild_coincidence(gsl_matrix *training_set, int index, int rows, int cols
     gsl_matrix_free(image);
 }
 
-int main( int argc, char  *argv [ ] )
-{
-    int e1 = 20; //cara
-    int e0 = 10; //conocido
-    int max_mismatch = 60;
-    //char *folderpath = "./test";
-    //int rows = 2;
-    //int cols = 5;
+// int main( int argc, char  *argv [ ] )
+// {
+//     int e1 = 20; //cara
+//     int e0 = 13; //conocido
+//     int max_mismatch = 88;
+//     //char *folderpath = "./test";
+//     //int rows = 2;
+//     //int cols = 5;
 
-    char *folderpath = "../../Database";
-    int rows = 112;
-    int cols = 92;
+//     char *folderpath = "../../Database";
+//     int rows = 112;
+//     int cols = 92;
 
-    // analyze_database(folderpath, rows, cols);
+//     // analyze_database(folderpath, rows, cols);
 
-    //compare("./test/1.png", 2, 5);
-    //compare("./person1.png", rows, cols, e1, e0, max_mismatch);
-    //compare("../../Comparar/40_10.png", rows, cols, e1, e0, max_mismatch);
+//     //compare("./test/1.png", 2, 5);
+//     //compare("./person1.png", rows, cols, e1, e0, max_mismatch);
+//     //compare("../../Comparar/40_10.png", rows, cols, e1, e0, max_mismatch);
 
-    if( argc == 3 )
-    {
-        if (argv[1][1]==0x63) /*comparar con "c"*/
-        {
-            printf("file to compare: %s \n", argv[2]);
-            compare(argv[2], rows, cols, e1, e0, max_mismatch);
-        }
-        else if (argv[1][1]==0x61) /*comparar con "a"*/
-        {
-            printf("database filepath: %s \n", argv[2]);
-            analyze_database(argv[2], rows, cols);
-        }
+//     if( argc == 3 )
+//     {
+//         if (argv[1][1]==0x63) /*comparar con "c"*/
+//         {
+//             printf("file to compare: %s \n", argv[2]);
+//             compare(argv[2], rows, cols, e1, e0, max_mismatch);
+//         }
+//         else if (argv[1][1]==0x61) /*comparar con "a"*/
+//         {
+//             printf("database filepath: %s \n", argv[2]);
+//             analyze_database(argv[2], rows, cols);
+//         }
         
         
-    }
-    else{
-        printf("argument error\n");
-    }
+//     }
+//     else{
+//         printf("argument error\n");
+//     }
     
 
-    return 0;
-}
+//     return 0;
+// }

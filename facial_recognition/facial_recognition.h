@@ -2,12 +2,13 @@
 #include <string.h>
 #include <png.h>
 #include <stdlib.h>
-
 #include <dirent.h> // Show directory files
-
 #include <gsl/gsl_matrix.h> // Matrix operations
 #include <gsl/gsl_vector.h> // Vector operations
 #include <gsl/gsl_linalg.h> // SVD algorithm
+
+
+
 
 /**
  * Function to read a png image

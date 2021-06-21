@@ -79,9 +79,10 @@ def post_photo():
         print("Directory already exists")
 
     image_string = photo_metadata['data']
-    image_base64 = image_string.split(",")[1]
+    # image_base64 = image_string.split(",")[1]
     #print(image_base64)
-    image_data = base64.b64decode(image_base64)
+    image_data = base64.b64decode(image_string)
+    # image_data = base64.b64decode(image_base64)
     filename = dir_name + "/" + photo_metadata['name']
     print(filename)
     with open(filename, 'wb') as file:
@@ -143,4 +144,4 @@ def post_settings():
     return response
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0")
