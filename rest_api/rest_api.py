@@ -1,11 +1,14 @@
 import json, base64, os
-from functools import wraps
 from flask import Flask, config, request, jsonify
 from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 CORS(app)
+
+
+# Image database directory path
+dir_name = "/home/Database"
 
 
 def config_response(response):
@@ -70,7 +73,7 @@ def post_user():
 def post_photo():
 
     photo_metadata = request.get_json()
-    dir_name = "Database"
+    global dir_name
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
         print("Directory created")
@@ -96,11 +99,13 @@ def post_photo():
 @app.route('/photo', methods=['GET'])
 def get_photos():
 
+    global dir_name
+
     photos = []
-    dir_list = os.listdir("Database")
+    dir_list = os.listdir(dir_name)
     print(dir_list)
     for photo in dir_list:
-        with open("Database/" + photo, 'rb') as file:
+        with open(dir_name + "/" + photo, 'rb') as file:
             photo_bytes = file.read()
             photo_base64 = base64.b64encode(photo_bytes)
             #photo_base64 = "data:image/png;base64," + str(photo_base64)[2:]
@@ -122,11 +127,14 @@ def delete_photo(name):
     #    if photo['name'] == name:
     #        photos.remove(photo)
 
-    filename = "Database" + "/" + name
+    global dir_name
+    filename = dir_name + "/" + name
     if os.path.exists(filename):
         os.remove(filename)
     else:
         print("File does not exist")
+
+    train_algorithm()
 
     response = jsonify(message="Foto eliminada")
     response = config_response(response)
@@ -154,6 +162,15 @@ def post_settings():
     response = jsonify(message="Variables registradas")
     response = config_response(response)
     return response
+
+
+"""
+Metodo para iniciar el entrenamiento del algoritmo de reconocimiento
+"""
+def train_algorithm():
+    global dir_name
+    command = "./facial_recognition -a " + dir_name
+    os.system(command)
 
 if __name__ == "__main__":
     app.run()
