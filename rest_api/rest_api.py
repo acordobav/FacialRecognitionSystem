@@ -2,7 +2,7 @@ import json, base64, os
 from flask import Flask, config, request, jsonify
 from flask_cors import CORS, cross_origin
 
-from PIL import Image
+#from PIL import Image
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -91,15 +91,16 @@ def post_photo():
     with open(filename, 'wb') as file:
         file.write(image_data)
 
-    image = Image.open(filename)
-    print(image.size)
-    if (image.size[0] > image.size[1]):
-        image = image.transpose(Image.ROTATE_90)
+    
+    #image = Image.open(filename)
+    #print(image.size)
+    #if (image.size[0] > image.size[1]):
+    #    image = image.transpose(Image.ROTATE_90)
 
-    image = image.crop((0,457,1920,2794))
-    image = image.resize((92,112))
-    print(image.size)
-    image.save(filename)
+    #image = image.crop((0,457,1920,2794))
+    #image = image.resize((92,112))
+    #print(image.size)
+    #image.save(filename)
 
     #photos.append(photo_metadata)
     response = jsonify(message="Foto enviada")
